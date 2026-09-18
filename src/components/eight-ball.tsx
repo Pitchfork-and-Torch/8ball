@@ -321,6 +321,14 @@ export function EightBall() {
                 key={m.id}
                 type="button"
                 onClick={() => {
+                  // Mode swap mid-hold left charging=true so pointerup shook
+                  // under the new mode. Mid-shake swaps also raced the result.
+                  if (shaking || ballShaking) return;
+                  if (charging) {
+                    cancelAnimationFrame(chargeRaf.current);
+                    setCharging(false);
+                    setCharge(0);
+                  }
                   setMode(m.id);
                   tick();
                 }}
