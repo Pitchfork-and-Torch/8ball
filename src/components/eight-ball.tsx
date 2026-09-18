@@ -204,6 +204,9 @@ export function EightBall() {
     // Press during an active shake would arm charge and fire again on release (#2
     // only guards fire() itself). Refuse to start a new charge while shaking.
     if (shaking || ballShaking) return;
+    // Non-primary buttons (right/middle/eraser) still deliver pointerdown/up.
+    // Charging on them made a right-click shake the ball and open the context menu.
+    if (e.button !== 0) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setCharging(true);
     setCharge(0);
@@ -218,6 +221,9 @@ export function EightBall() {
 
   const onPointerUp = (e: React.PointerEvent) => {
     if (!charging) return;
+    // Ignore non-primary release so a right-button up cannot complete a charge
+    // that somehow started, or race a primary hold.
+    if (e.button !== 0) return;
     cancelAnimationFrame(chargeRaf.current);
     setCharging(false);
     setCharge(0);
