@@ -555,6 +555,16 @@ export function EightBall() {
                     key={h.id}
                     className="cursor-pointer rounded-2xl border border-border/70 bg-bg/40 px-3.5 py-3 transition-colors hover:border-primary/30"
                     onClick={() => {
+                      // Mid-shake history recall used to show the old item, then the
+                      // 320ms fire timeout resurrected a new result and bumped count.
+                      // Bump epoch so in-flight shake timeouts no-op (same idea as Reset).
+                      shakeEpoch.current += 1;
+                      cancelAnimationFrame(chargeRaf.current);
+                      setCharging(false);
+                      setCharge(0);
+                      setBallShaking(false);
+                      setShaking(false);
+                      setFlash(false);
                       setResult(h);
                       setRevealing(true);
                       tick();
