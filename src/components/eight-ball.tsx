@@ -423,6 +423,13 @@ export function EightBall() {
                 // pointer handlers - without this, keyboard users cannot shake.
                 if (e.detail !== 0) return;
                 if (shaking || ballShaking) return;
+                // Space/Enter during an active hold left charging=true, so the
+                // glow stuck on "shaking..." and pointerup could race a second fire.
+                if (charging) {
+                  cancelAnimationFrame(chargeRaf.current);
+                  setCharging(false);
+                  setCharge(0);
+                }
                 fire();
               }}
               onPointerLeave={(e) => {
