@@ -35,16 +35,36 @@ type HistoryItem = {
 
 const STORAGE_KEY = "eightball-stats-v1";
 
+function isHistoryItem(v: unknown): v is HistoryItem {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.id === "string" &&
+    typeof o.headline === "string" &&
+    typeof o.body === "string" &&
+    typeof o.at === "number" &&
+    (o.mode === "classic" ||
+      o.mode === "permission" ||
+      o.mode === "dare" ||
+      o.mode === "idea" ||
+      o.mode === "affirmation") &&
+    (o.tone === "yes" || o.tone === "no" || o.tone === "maybe" || o.tone === "neutral")
+  );
+}
+
 function loadStats(): { count: number; history: HistoryItem[] } {
   if (typeof window === "undefined") return { count: 0, history: [] };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { count: 0, history: [] };
-    const parsed = JSON.parse(raw) as { count?: number; history?: HistoryItem[] };
-    return {
-      count: parsed.count ?? 0,
-      history: Array.isArray(parsed.history) ? parsed.history.slice(0, 24) : [],
-    };
+    const parsed = JSON.parse(raw) as { count?: unknown; history?: unknown };
+    // Coerce: a string/NaN count made `setCount(c => c + 1)` concatenate ("5"→"51").
+    const n = typeof parsed.count === "number" ? parsed.count : Number(parsed.count);
+    const count = Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+    const history = Array.isArray(parsed.history)
+      ? parsed.history.filter(isHistoryItem).slice(0, 24)
+      : [];
+    return { count, history };
   } catch {
     return { count: 0, history: [] };
   }
