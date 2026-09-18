@@ -391,6 +391,14 @@ export function EightBall() {
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerCancel}
               onLostPointerCapture={onLostPointerCapture}
+              onClick={(e) => {
+                // Pointer path already shakes on pointerup. Native button activation
+                // (Enter/Space) synthesizes click with detail===0 and never runs
+                // pointer handlers - without this, keyboard users cannot shake.
+                if (e.detail !== 0) return;
+                if (shaking || ballShaking) return;
+                fire();
+              }}
               onPointerLeave={(e) => {
                 // setPointerCapture still delivers pointerleave at the element
                 // edge. Firing the shake there cuts a hold-to-charge short.
