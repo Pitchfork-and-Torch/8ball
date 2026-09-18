@@ -181,6 +181,14 @@ export function EightBall() {
     setCharge(0);
   };
 
+  // Capture can drop without pointercancel (OS gesture, overlay, tab switch).
+  // Without this, charging stays true and the ball is stuck on "shaking...".
+  const onLostPointerCapture = () => {
+    cancelAnimationFrame(chargeRaf.current);
+    setCharging(false);
+    setCharge(0);
+  };
+
   const copyResult = async () => {
     if (!result) return;
     const text = `${result.headline}\n${result.body}\n -  8ball.grok.me`;
@@ -350,6 +358,7 @@ export function EightBall() {
               onPointerDown={onPointerDown}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerCancel}
+              onLostPointerCapture={onLostPointerCapture}
               onPointerLeave={(e) => {
                 if (charging) onPointerUp(e as unknown as React.PointerEvent);
               }}
