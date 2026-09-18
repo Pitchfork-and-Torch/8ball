@@ -113,6 +113,8 @@ export function EightBall() {
   const stageRef = useRef<HTMLDivElement>(null);
   const chargeRaf = useRef(0);
   const chargeStart = useRef(0);
+  // Bumps to drop in-flight shake timeouts (Reset mid-shake left zombie results).
+  const shakeEpoch = useRef(0);
   const { thump, tick, whoosh } = useSound(soundOn);
 
   useEffect(() => {
@@ -131,6 +133,7 @@ export function EightBall() {
     (clientX?: number, clientY?: number) => {
       // Overlapping shakes race timeouts and inflate the counter with stale results.
       if (shaking || ballShaking) return;
+      const epoch = ++shakeEpoch.current;
       const stage = stageRef.current;
       if (stage && clientX != null && clientY != null) {
         const rect = stage.getBoundingClientRect();
@@ -146,6 +149,8 @@ export function EightBall() {
       whoosh();
 
       window.setTimeout(() => {
+        // Reset (or a newer shake) bumped the epoch - drop this stale reveal.
+        if (epoch !== shakeEpoch.current) return;
         const gen = generateResult(mode, question);
         const item: HistoryItem = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -163,10 +168,14 @@ export function EightBall() {
         setFlash(true);
         setRevealing(true);
         thump();
-        window.setTimeout(() => setFlash(false), 180);
+        window.setTimeout(() => {
+          if (epoch !== shakeEpoch.current) return;
+          setFlash(false);
+        }, 180);
       }, 320);
 
       window.setTimeout(() => {
+        if (epoch !== shakeEpoch.current) return;
         setBallShaking(false);
         setShaking(false);
       }, 500);
@@ -226,6 +235,15 @@ export function EightBall() {
   };
 
   const clearHistory = () => {
+    // Mid-shake Reset used to clear UI, then the 320ms timeout resurrected the
+    // result and bumped count. Bump epoch so in-flight fire timeouts no-op.
+    shakeEpoch.current += 1;
+    cancelAnimationFrame(chargeRaf.current);
+    setCharging(false);
+    setCharge(0);
+    setBallShaking(false);
+    setShaking(false);
+    setFlash(false);
     setHistory([]);
     setCount(0);
     setResult(null);
