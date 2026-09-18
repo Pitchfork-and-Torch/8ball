@@ -360,7 +360,14 @@ export function EightBall() {
               onPointerCancel={onPointerCancel}
               onLostPointerCapture={onLostPointerCapture}
               onPointerLeave={(e) => {
-                if (charging) onPointerUp(e as unknown as React.PointerEvent);
+                // setPointerCapture still delivers pointerleave at the element
+                // edge. Firing the shake there cuts a hold-to-charge short.
+                // Only treat leave as release when capture is not held (fallback
+                // if setPointerCapture failed). up/cancel/lost own the real end.
+                if (!charging) return;
+                const el = e.currentTarget as HTMLElement;
+                if (el.hasPointerCapture?.(e.pointerId)) return;
+                onPointerUp(e as unknown as React.PointerEvent);
               }}
               className={cn(
                 "group relative flex h-[min(58vw,260px)] w-[min(58vw,260px)] select-none flex-col items-center justify-center rounded-full",
