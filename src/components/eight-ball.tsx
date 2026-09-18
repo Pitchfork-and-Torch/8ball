@@ -109,6 +109,8 @@ export function EightBall() {
 
   const fire = useCallback(
     (clientX?: number, clientY?: number) => {
+      // Overlapping shakes race timeouts and inflate the counter with stale results.
+      if (shaking || ballShaking) return;
       const stage = stageRef.current;
       if (stage && clientX != null && clientY != null) {
         const rect = stage.getBoundingClientRect();
@@ -149,7 +151,7 @@ export function EightBall() {
         setShaking(false);
       }, 500);
     },
-    [mode, question, thump, whoosh],
+    [mode, question, thump, whoosh, shaking, ballShaking],
   );
 
   const onPointerDown = (e: React.PointerEvent) => {
