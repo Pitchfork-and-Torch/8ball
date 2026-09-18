@@ -175,6 +175,9 @@ export function EightBall() {
   );
 
   const onPointerDown = (e: React.PointerEvent) => {
+    // Press during an active shake would arm charge and fire again on release (#2
+    // only guards fire() itself). Refuse to start a new charge while shaking.
+    if (shaking || ballShaking) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setCharging(true);
     setCharge(0);
@@ -346,7 +349,16 @@ export function EightBall() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") fire();
+                if (e.key !== "Enter") return;
+                // Enter during hold-to-charge left charging=true, so pointerup
+                // fired a second shake after the first window ended.
+                if (shaking || ballShaking) return;
+                if (charging) {
+                  cancelAnimationFrame(chargeRaf.current);
+                  setCharging(false);
+                  setCharge(0);
+                }
+                fire();
               }}
               placeholder="Should I text them back?"
               maxLength={120}
